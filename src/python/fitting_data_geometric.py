@@ -125,6 +125,7 @@ zeroTolerance = 0.00001
     generatedMeshUserNumber,
     meshUserNumber,
     decompositionUserNumber,
+    decomposerUserNumber,
     geometricFieldUserNumber,
     equationsSetFieldUserNumber,
     dependentFieldUserNumber,
@@ -136,7 +137,7 @@ zeroTolerance = 0.00001
     dependentDataFieldUserNumber,
     dataProjectionUserNumber,
     equationsSetUserNumber,
-    problemUserNumber) = range(1,19)
+    problemUserNumber) = range(1,20)
 
 worldRegion = iron.Region()
 iron.Context.WorldRegionGet(worldRegion)
@@ -144,8 +145,11 @@ iron.Context.WorldRegionGet(worldRegion)
 # Get the computational nodes information
 computationEnvironment = iron.ComputationEnvironment()
 iron.Context.ComputationEnvironmentGet(computationEnvironment)
-numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
-computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
+
+worldWorkGroup = iron.WorkGroup()
+computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
+numberOfComputationalNodes = worldWorkGroup.NumberOfGroupNodesGet()
+computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
 
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
@@ -193,10 +197,14 @@ mesh.CreateFinish()
 # Create a decomposition for the mesh
 decomposition = iron.Decomposition()
 decomposition.CreateStart(decompositionUserNumber,mesh)
-decomposition.type = iron.DecompositionTypes.CALCULATED
-decomposition.numberOfDomains = numberOfComputationalNodes
 decomposition.CalculateFacesSet(True)
 decomposition.CreateFinish()
+
+# Decompose 
+decomposer = iron.Decomposer()
+decomposer.CreateStart(decomposerUserNumber,worldRegion,worldWorkGroup)
+decompositionIndex = decomposer.DecompositionAdd(decomposition)
+decomposer.CreateFinish()
 
 #=================================================================
 # Geometric Field
