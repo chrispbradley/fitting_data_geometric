@@ -139,9 +139,8 @@ zeroTolerance = 0.00001
     problemUserNumber) = range(1,19)
 
 # Get the computational nodes information
-computationEnvironment = iron.ComputationEnvironment()
-numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
-computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
+numberOfComputationalNodes = iron.ComputationalNumberOfNodesGet()
+computationalNodeNumber = iron.ComputationalNodeNumberGet()
 
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
