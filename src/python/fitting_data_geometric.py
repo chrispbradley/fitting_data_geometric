@@ -143,6 +143,7 @@ zeroTolerance = 0.00001
 #iron.Context.WorldRegionGet(worldRegion)
 
 # Get the computational nodes information
+
 #computationEnvironment = iron.ComputationEnvironment()
 #iron.Context.ComputationEnvironmentGet(computationEnvironment)
 
@@ -154,6 +155,7 @@ zeroTolerance = 0.00001
 computationEnvironment = iron.ComputationEnvironment()
 numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
 computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
+
 
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
