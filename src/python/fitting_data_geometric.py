@@ -139,33 +139,33 @@ zeroTolerance = 0.00001
     equationsSetUserNumber,
     problemUserNumber) = range(1,20)
 
-#worldRegion = iron.Region()
-#iron.Context.WorldRegionGet(worldRegion)
+worldRegion = iron.Region()
+iron.Context.WorldRegionGet(worldRegion)
 
 # Get the computational nodes information
-#computationEnvironment = iron.ComputationEnvironment()
-#iron.Context.ComputationEnvironmentGet(computationEnvironment)
-
-#worldWorkGroup = iron.WorkGroup()
-#computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
-#numberOfComputationalNodes = worldWorkGroup.NumberOfGroupNodesGet()
-#computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
-
 computationEnvironment = iron.ComputationEnvironment()
-numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
-computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
+iron.Context.ComputationEnvironmentGet(computationEnvironment)
+
+worldWorkGroup = iron.WorkGroup()
+computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
+numberOfComputationalNodes = worldWorkGroup.NumberOfGroupNodesGet()
+computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
+
+#computationEnvironment = iron.ComputationEnvironment()
+#numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
+#computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
 
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
-#coordinateSystem.CreateStart(coordinateSystemUserNumber,iron.Context)
-coordinateSystem.CreateStart(coordinateSystemUserNumber)
+coordinateSystem.CreateStart(coordinateSystemUserNumber,iron.Context)
+#coordinateSystem.CreateStart(coordinateSystemUserNumber)
 coordinateSystem.dimension = 3
 coordinateSystem.CreateFinish()
 
 # Create a region
 region = iron.Region()
-#region.CreateStart(regionUserNumber,worldRegion)
-region.CreateStart(regionUserNumber,iron.WorldRegion)
+region.CreateStart(regionUserNumber,worldRegion)
+#region.CreateStart(regionUserNumber,iron.WorldRegion)
 region.label = "FittingRegion"
 region.coordinateSystem = coordinateSystem
 region.CreateFinish()
@@ -176,8 +176,8 @@ region.CreateFinish()
 
 # Create a tricubic Hermite basis
 basis = iron.Basis()
-#basis.CreateStart(basisUserNumber,iron.Context)
-basis.CreateStart(basisUserNumber)
+basis.CreateStart(basisUserNumber,iron.Context)
+#basis.CreateStart(basisUserNumber)
 basis.type = iron.BasisTypes.LAGRANGE_HERMITE_TP
 basis.numberOfXi = 3
 basis.interpolationXi = [iron.BasisInterpolationSpecifications.CUBIC_HERMITE]*3
@@ -477,8 +477,8 @@ dataProjection.ProjectionCandidateFacesSet([1],[iron.ElementNormalXiDirections.P
 dataProjection.CreateFinish()
 
 
-dataProjection.ResultElementNumberSet(1,1)
-dataProjection.ResultXiSet(1,[0.1,0.1])
+#dataProjection.ResultElementNumberSet(1,1)
+#dataProjection.ResultXiSet(1,[0.1,0.1])
 
 # Evaluate data projection based on geometric field
 dataProjection.DataPointsProjectionEvaluate(iron.FieldParameterSetTypes.VALUES)
@@ -516,7 +516,7 @@ equationsSetField = iron.Field()
 equationsSet = iron.EquationsSet()
 equationsSetSpecification = [iron.EquationsSetClasses.FITTING,
                              iron.EquationsSetTypes.DATA_FITTING_EQUATION,
-                             iron.EquationsSetSubtypes.DATA_POINT_FITTING,
+                             iron.EquationsSetSubtypes.GENERALISED_DATA_FITTING,
                              iron.EquationsSetFittingSmoothingTypes.SOBOLEV_VALUE]
 equationsSet.CreateStart(equationsSetUserNumber,region,geometricField,
         equationsSetSpecification, equationsSetFieldUserNumber, equationsSetField)
@@ -531,7 +531,7 @@ dependentField = iron.Field()
 equationsSet.DependentCreateStart(dependentFieldUserNumber,dependentField)
 dependentField.VariableLabelSet(iron.FieldVariableTypes.U,"Dependent")
 dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
-dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.DELUDELN,3)
+#dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.DELUDELN,3)
 dependentField.ScalingTypeSet(iron.FieldScalingTypes.ARITHMETIC_MEAN)
 equationsSet.DependentCreateFinish()
 
@@ -550,6 +550,8 @@ independentField = iron.Field()
 equationsSet.IndependentCreateStart(independentFieldUserNumber,independentField)
 independentField.VariableLabelSet(iron.FieldVariableTypes.U,"DataPointVector")
 independentField.VariableLabelSet(iron.FieldVariableTypes.V,"DataPointWeight")
+independentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
+independentField.NumberOfComponentsSet(iron.FieldVariableTypes.V,3)
 independentField.DataProjectionSet(dataProjection)
 equationsSet.IndependentCreateFinish()
 
@@ -605,10 +607,10 @@ equationsSet.EquationsCreateFinish()
 # Create fitting problem
 problem = iron.Problem()
 problemSpecification = [iron.ProblemClasses.FITTING,
-                        iron.ProblemTypes.DATA_FITTING,
+                        iron.ProblemTypes.FITTING,
                         iron.ProblemSubtypes.STATIC_FITTING]
-#problem.CreateStart(problemUserNumber,iron.Context,problemSpecification)
-problem.CreateStart(problemUserNumber,problemSpecification)
+problem.CreateStart(problemUserNumber,iron.Context,problemSpecification)
+#problem.CreateStart(problemUserNumber,problemSpecification)
 problem.CreateFinish()
 
 # Create control loops
