@@ -155,6 +155,7 @@ computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
 #numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
 #computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
 
+
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
 coordinateSystem.CreateStart(coordinateSystemUserNumber,iron.Context)
