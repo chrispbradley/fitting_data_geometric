@@ -14,7 +14,6 @@ import random
 # Intialise OpenCMISS
 from opencmiss.iron import iron
 
-
 # defining the output file to be written in the ExDataFile
 def writeExdataFile(filename,dataPointLocations,dataErrorVector,dataErrorDistance,offset):
     "Writes data points to an exdata file"
@@ -119,7 +118,8 @@ zeroTolerance = 0.00001
 
 #=================================================================
 
-(coordinateSystemUserNumber,
+(contextUserNumber,
+    coordinateSystemUserNumber,
     regionUserNumber,
     basisUserNumber,
     generatedMeshUserNumber,
@@ -137,14 +137,17 @@ zeroTolerance = 0.00001
     dependentDataFieldUserNumber,
     dataProjectionUserNumber,
     equationsSetUserNumber,
-    problemUserNumber) = range(1,20)
+    problemUserNumber) = range(1,21)
+
+context = iron.Context()
+context.Create(contextUserNumber)
 
 worldRegion = iron.Region()
-iron.Context.WorldRegionGet(worldRegion)
+context.WorldRegionGet(worldRegion)
 
 # Get the computational nodes information
 computationEnvironment = iron.ComputationEnvironment()
-iron.Context.ComputationEnvironmentGet(computationEnvironment)
+context.ComputationEnvironmentGet(computationEnvironment)
 
 worldWorkGroup = iron.WorkGroup()
 computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
@@ -158,7 +161,7 @@ computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
 
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
-coordinateSystem.CreateStart(coordinateSystemUserNumber,iron.Context)
+coordinateSystem.CreateStart(coordinateSystemUserNumber,context)
 #coordinateSystem.CreateStart(coordinateSystemUserNumber)
 coordinateSystem.dimension = 3
 coordinateSystem.CreateFinish()
@@ -177,7 +180,7 @@ region.CreateFinish()
 
 # Create a tricubic Hermite basis
 basis = iron.Basis()
-basis.CreateStart(basisUserNumber,iron.Context)
+basis.CreateStart(basisUserNumber,context)
 #basis.CreateStart(basisUserNumber)
 basis.type = iron.BasisTypes.LAGRANGE_HERMITE_TP
 basis.numberOfXi = 3
@@ -610,7 +613,7 @@ problem = iron.Problem()
 problemSpecification = [iron.ProblemClasses.FITTING,
                         iron.ProblemTypes.FITTING,
                         iron.ProblemSubtypes.STATIC_FITTING]
-problem.CreateStart(problemUserNumber,iron.Context,problemSpecification)
+problem.CreateStart(problemUserNumber,context,problemSpecification)
 #problem.CreateStart(problemUserNumber,problemSpecification)
 problem.CreateFinish()
 
@@ -709,4 +712,7 @@ for iteration in range (1,numberOfIterations+1):
     fields.ElementsExport("DeformedGeometry" + str(iteration),"FORTRAN")
     fields.Finalise()
 
-iron.Finalise(iron.Context)
+# Destroy the context
+context.Destroy()
+# Finalise OpenCMISS
+iron.Finalise()
