@@ -601,7 +601,7 @@ equations = iron.Equations()
 equationsSet.EquationsCreateStart(equations)
 equations.sparsityType = iron.EquationsSparsityTypes.SPARSE
 equations.outputType = iron.EquationsOutputTypes.NONE
-#equations.outputType = iron.EquationsOutputTypes.MATRIX
+equations.outputType = iron.EquationsOutputTypes.MATRIX
 equationsSet.EquationsCreateFinish()
 
 #=================================================================
@@ -626,7 +626,7 @@ solver = iron.Solver()
 problem.SolversCreateStart()
 problem.SolverGet([iron.ControlLoopIdentifiers.NODE],1,solver)
 solver.outputType = iron.SolverOutputTypes.NONE
-#solver.outputType = iron.SolverOutputTypes.MATRIX 
+solver.outputType = iron.SolverOutputTypes.MATRIX 
 solver.linearType = iron.LinearSolverTypes.ITERATIVE
 #solver.LibraryTypeSet(iron.SolverLibraries.UMFPACK) # UMFPACK/SUPERLU
 solver.linearIterativeAbsoluteTolerance = 1.0E-10
