@@ -87,7 +87,7 @@ def writeExdataFile(filename,dataPointLocations,dataErrorVector,dataErrorDistanc
 #=================================================================
 
 # Set data point resolution (will be randomly placed on surface of a sphere)
-numberOfDataPoints = 50
+numberOfDataPoints = 30
 # Set Sobolev smoothing parameters
 tau = 5.0
 kappa = 1.0
@@ -107,40 +107,33 @@ if len(sys.argv) > 1:
         numberOfIterations = int(sys.argv[4])
 
 # Set cube dimensions
-cubeSize = 1.00
-sphereRadius = 1.00
+CUBE_SIZE = 1.00
 
-# Set origin
-origin = [0.0,0.0,0.0]
-
-numberOfGaussXi = 3
-zeroTolerance = 0.00001
+NUMBER_OF_GAUSS_XI = 3
+ZERO_TOLERANCE = 0.00001
+DATA_OFFSET=1000
 
 #=================================================================
 
-(contextUserNumber,
-    coordinateSystemUserNumber,
-    regionUserNumber,
-    basisUserNumber,
-    generatedMeshUserNumber,
-    meshUserNumber,
-    decompositionUserNumber,
-    decomposerUserNumber,
-    geometricFieldUserNumber,
-    equationsSetFieldUserNumber,
-    dependentFieldUserNumber,
-    independentFieldUserNumber,
-    dataPointUserNumber,
-    dataPointFieldUserNumber,
-    materialFieldUserNumber,
-    analyticFieldUserNumber,
-    dependentDataFieldUserNumber,
-    dataProjectionUserNumber,
-    equationsSetUserNumber,
-    problemUserNumber) = range(1,21)
+(CONTEXT_USER_NUMBER,
+ COORDINATE_SYSTEM_USER_NUMBER,
+ REGION_USER_NUMBER,
+ BASIS_USER_NUMBER,
+ MESH_USER_NUMBER,
+ DECOMPOSITION_USER_NUMBER,
+ DECOMPOSER_USER_NUMBER,
+ GEOMETRIC_FIELD_USER_NUMBER,
+ EQUATIONS_SET_FIELD_USER_NUMBER,
+ DEPENDENT_FIELD_USER_NUMBER,
+ INDEPENDENT_FIELD_USER_NUMBER,
+ DATA_POINT_USER_NUMBER,
+ MATERIALS_FIELD_USER_NUMBER,
+ DATA_PROJECTION_USER_NUMBER,
+ EQUATIONS_SET_USER_NUMBER,
+ PROBLEM_USER_NUMBER) = range(1,17)
 
 context = iron.Context()
-context.Create(contextUserNumber)
+context.Create(CONTEXT_USER_NUMBER)
 
 worldRegion = iron.Region()
 context.WorldRegionGet(worldRegion)
@@ -154,24 +147,17 @@ computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
 numberOfComputationalNodes = worldWorkGroup.NumberOfGroupNodesGet()
 computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
 
-#computationEnvironment = iron.ComputationEnvironment()
-#numberOfComputationalNodes = computationEnvironment.NumberOfWorldNodesGet()
-#computationalNodeNumber = computationEnvironment.WorldNodeNumberGet()
-
-
 # Create a RC coordinate system
 coordinateSystem = iron.CoordinateSystem()
-coordinateSystem.CreateStart(coordinateSystemUserNumber,context)
-#coordinateSystem.CreateStart(coordinateSystemUserNumber)
-coordinateSystem.dimension = 3
+coordinateSystem.CreateStart(COORDINATE_SYSTEM_USER_NUMBER,context)
+coordinateSystem.DimensionSet(3)
 coordinateSystem.CreateFinish()
 
 # Create a region
 region = iron.Region()
-region.CreateStart(regionUserNumber,worldRegion)
-#region.CreateStart(regionUserNumber,iron.WorldRegion)
-region.label = "FittingRegion"
-region.coordinateSystem = coordinateSystem
+region.CreateStart(REGION_USER_NUMBER,worldRegion)
+region.LabelSet("FittingRegion")
+region.CoordinateSystemSet(coordinateSystem)
 region.CreateFinish()
 
 #=================================================================
@@ -180,12 +166,11 @@ region.CreateFinish()
 
 # Create a tricubic Hermite basis
 basis = iron.Basis()
-basis.CreateStart(basisUserNumber,context)
-#basis.CreateStart(basisUserNumber)
-basis.type = iron.BasisTypes.LAGRANGE_HERMITE_TP
-basis.numberOfXi = 3
-basis.interpolationXi = [iron.BasisInterpolationSpecifications.CUBIC_HERMITE]*3
-basis.quadratureNumberOfGaussXi = [numberOfGaussXi]*3
+basis.CreateStart(BASIS_USER_NUMBER,context)
+basis.TypeSet(iron.BasisTypes.LAGRANGE_HERMITE_TP)
+basis.NumberOfXiSet(3)
+basis.InterpolationXiSet([iron.BasisInterpolationSpecifications.CUBIC_HERMITE]*3)
+basis.QuadratureNumberOfGaussXiSet([NUMBER_OF_GAUSS_XI]*3)
 basis.CreateFinish()
 
 # Define nodes for the mesh
@@ -195,25 +180,24 @@ nodes.CreateFinish()
 
 # Create the mesh
 mesh = iron.Mesh()
-mesh.CreateStart(meshUserNumber, region, 3)
+mesh.CreateStart(MESH_USER_NUMBER,region,3)
 mesh.NumberOfComponentsSet(1)
 mesh.NumberOfElementsSet(1)
 elements = iron.MeshElements()
-meshComponentNumber = 1
 elements.CreateStart(mesh, 1, basis)
-elements.NodesSet(1, [1,2,3,4,5,6,7,8])
+elements.NodesSet(1,[1,2,3,4,5,6,7,8])
 elements.CreateFinish()
 mesh.CreateFinish()
 
 # Create a decomposition for the mesh
 decomposition = iron.Decomposition()
-decomposition.CreateStart(decompositionUserNumber,mesh)
+decomposition.CreateStart(DECOMPOSITION_USER_NUMBER,mesh)
 decomposition.CalculateFacesSet(True)
 decomposition.CreateFinish()
 
 # Decompose 
 decomposer = iron.Decomposer()
-decomposer.CreateStart(decomposerUserNumber,worldRegion,worldWorkGroup)
+decomposer.CreateStart(DECOMPOSER_USER_NUMBER,worldRegion,worldWorkGroup)
 decompositionIndex = decomposer.DecompositionAdd(decomposition)
 decomposer.CreateFinish()
 
@@ -223,8 +207,8 @@ decomposer.CreateFinish()
 
 # Create a field for the geometry
 geometricField = iron.Field()
-geometricField.CreateStart(geometricFieldUserNumber,region)
-geometricField.decomposition = decomposition
+geometricField.CreateStart(GEOMETRIC_FIELD_USER_NUMBER,region)
+geometricField.DecompositionSet(decomposition)
 geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,1,1)
 geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,2,1)
 geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,3,1)
@@ -234,11 +218,11 @@ geometricField.CreateFinish()
 # Set the geometric field dofs
 # Node 1
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 1, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 1, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 2, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 2, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 3, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 3, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -259,11 +243,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 3, 1.0)
 # Node 2
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 1,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 1,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 2, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 2, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 3, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 3, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -284,11 +268,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 3, 1.0)
 # Node 3
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 1, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 1, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 2,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 2,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 3, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 3, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -309,11 +293,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 3, 1.0)
 # Node 4
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 1,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 1,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 2,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 2,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 3, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 3, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -334,11 +318,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 3, 1.0)
 # Node 5
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 1, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 1, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 2, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 2, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 3,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 3,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -359,11 +343,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 3, 1.0)
 # Node 6
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 1,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 1,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 2, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 2, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 3,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 3,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -384,11 +368,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 3, 1.0)
 # Node 7
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 1, -cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 1, -CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 2,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 2,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 3,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 3,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -409,11 +393,11 @@ geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParame
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 3, 1.0)
 # Node 8
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 1,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 1,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 2,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 2,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 3,  cubeSize)
+                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 3,  CUBE_SIZE)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
                                       1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 1, 1.0)
 geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
@@ -442,7 +426,7 @@ geometricField.ParameterSetUpdateFinish(iron.FieldVariableTypes.U, iron.FieldPar
 
 # Create the data points
 dataPoints = iron.DataPoints()
-dataPoints.CreateStart(dataPointUserNumber,region,numberOfDataPoints)
+dataPoints.CreateStart(DATA_POINT_USER_NUMBER,region,numberOfDataPoints)
 
 localNumberOfDataPoints = 0
 dataPointLocations = numpy.zeros((numberOfDataPoints,3))
@@ -451,13 +435,13 @@ print("Number of data points: " + str(numberOfDataPoints))
 # Calculate data point locations of points on a sphere
 random.seed(1)
 for i in range(numberOfDataPoints):
-    x = 2.0*(random.uniform(0.0,1.0)-0.5)
-    y = 2.0*(random.uniform(0.0,1.0)-0.5)
-    r2 = 3*cubeSize*cubeSize
-    if (r2-x*x-y*y)>zeroTolerance :
+    x = 2.0*CUBE_SIZE*(random.uniform(0.0,1.0)-0.5)
+    y = 2.0*CUBE_SIZE*(random.uniform(0.0,1.0)-0.5)
+    r2 = 3.0*CUBE_SIZE*CUBE_SIZE
+    if (r2-x*x-y*y)>ZERO_TOLERANCE :
         z = math.sqrt(r2-x*x-y*y)
     else:
-        z = cubeSize
+        z = CUBE_SIZE
     dataPointLocations[i,:] = [x,y,z]
 
 # Set up CMISS data points with geometric values
@@ -465,6 +449,8 @@ for dataPoint in range(numberOfDataPoints):
     dataPointId = dataPoint + 1
     dataList = dataPointLocations[dataPoint,:]
     dataPoints.PositionSet(dataPointId,dataList)
+    dataLabel = str(dataPoint + DATA_OFFSET)
+    dataPoints.LabelSet(dataPointId,dataLabel)
 
 dataPoints.CreateFinish()
 
@@ -475,11 +461,10 @@ dataPoints.CreateFinish()
 print("Projecting data points onto geometric field")
 # Set up data projection
 dataProjection = iron.DataProjection()
-dataProjection.CreateStart(dataProjectionUserNumber,dataPoints,geometricField,iron.FieldVariableTypes.U)
-dataProjection.projectionType = iron.DataProjectionProjectionTypes.BOUNDARY_FACES
+dataProjection.CreateStart(DATA_PROJECTION_USER_NUMBER,dataPoints,geometricField,iron.FieldVariableTypes.U)
+dataProjection.ProjectionTypeSet(iron.DataProjectionProjectionTypes.BOUNDARY_FACES)
 dataProjection.ProjectionCandidateFacesSet([1],[iron.ElementNormalXiDirections.PLUS_XI3])
 dataProjection.CreateFinish()
-
 
 #dataProjection.ResultElementNumberSet(1,1)
 #dataProjection.ResultXiSet(1,[0.1,0.1])
@@ -507,8 +492,8 @@ for dataPointIdx in range(1,numberOfProjectedDataPoints+1):
     dataErrorDistance[dataPointNumber-1]=errorDistance
  
 # write data points to exdata file for CMGUI
-offset = 0
-writeExdataFile("DataPoints.part"+str(computationalNodeNumber)+".exdata",dataPointLocations,dataErrorVector,dataErrorDistance,offset)
+writeExdataFile("DataPoints.part"+str(computationalNodeNumber)+".exdata",dataPointLocations,dataErrorVector,
+                dataErrorDistance,DATA_OFFSET)
 print("Projection complete")
 
 #=================================================================
@@ -522,8 +507,8 @@ equationsSetSpecification = [iron.EquationsSetClasses.FITTING,
                              iron.EquationsSetTypes.DATA_FITTING_EQUATION,
                              iron.EquationsSetSubtypes.GENERALISED_DATA_FITTING,
                              iron.EquationsSetFittingSmoothingTypes.SOBOLEV_VALUE]
-equationsSet.CreateStart(equationsSetUserNumber,region,geometricField,
-        equationsSetSpecification, equationsSetFieldUserNumber, equationsSetField)
+equationsSet.CreateStart(EQUATIONS_SET_USER_NUMBER,region,geometricField,
+        equationsSetSpecification,EQUATIONS_SET_FIELD_USER_NUMBER,equationsSetField)
 equationsSet.CreateFinish()
 
 #=================================================================
@@ -532,10 +517,9 @@ equationsSet.CreateFinish()
 
 # Create dependent field (will be deformed fitted values based on data point locations)
 dependentField = iron.Field()
-equationsSet.DependentCreateStart(dependentFieldUserNumber,dependentField)
+equationsSet.DependentCreateStart(DEPENDENT_FIELD_USER_NUMBER,dependentField)
 dependentField.VariableLabelSet(iron.FieldVariableTypes.U,"Dependent")
 dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
-#dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.DELUDELN,3)
 dependentField.ScalingTypeSet(iron.FieldScalingTypes.ARITHMETIC_MEAN)
 equationsSet.DependentCreateFinish()
 
@@ -551,7 +535,7 @@ for component in range (1,4):
 
 # Create data point field (independent field, with vector values stored at the data points)
 independentField = iron.Field()
-equationsSet.IndependentCreateStart(independentFieldUserNumber,independentField)
+equationsSet.IndependentCreateStart(INDEPENDENT_FIELD_USER_NUMBER,independentField)
 independentField.VariableLabelSet(iron.FieldVariableTypes.U,"DataPointVector")
 independentField.VariableLabelSet(iron.FieldVariableTypes.V,"DataPointWeight")
 independentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
@@ -584,7 +568,7 @@ if (elementDomain == computationalNodeNumber):
 
 # Create material field (Sobolev parameters)
 materialField = iron.Field()
-equationsSet.MaterialsCreateStart(materialFieldUserNumber,materialField)
+equationsSet.MaterialsCreateStart(MATERIALS_FIELD_USER_NUMBER,materialField)
 materialField.VariableLabelSet(iron.FieldVariableTypes.U,"SmoothingParameters")
 equationsSet.MaterialsCreateFinish()
 
@@ -613,8 +597,7 @@ problem = iron.Problem()
 problemSpecification = [iron.ProblemClasses.FITTING,
                         iron.ProblemTypes.FITTING,
                         iron.ProblemSubtypes.STATIC_FITTING]
-problem.CreateStart(problemUserNumber,context,problemSpecification)
-#problem.CreateStart(problemUserNumber,problemSpecification)
+problem.CreateStart(PROBLEM_USER_NUMBER,context,problemSpecification)
 problem.CreateFinish()
 
 # Create control loops
@@ -625,12 +608,12 @@ problem.ControlLoopCreateFinish()
 solver = iron.Solver()
 problem.SolversCreateStart()
 problem.SolverGet([iron.ControlLoopIdentifiers.NODE],1,solver)
-solver.outputType = iron.SolverOutputTypes.NONE
-solver.outputType = iron.SolverOutputTypes.MATRIX 
-solver.linearType = iron.LinearSolverTypes.ITERATIVE
+#solver.OutputTypeSet(iron.SolverOutputTypes.NONE)
+solver.OutputTypeSet(iron.SolverOutputTypes.MATRIX)
+solver.LinearTypeSet(iron.LinearSolverTypes.ITERATIVE)
 #solver.LibraryTypeSet(iron.SolverLibraries.UMFPACK) # UMFPACK/SUPERLU
-solver.linearIterativeAbsoluteTolerance = 1.0E-10
-solver.linearIterativeRelativeTolerance = 1.0E-05
+solver.LinearIterativeAbsoluteToleranceSet(1.0E-10)
+solver.LinearIterativeRelativeToleranceSet(1.0E-05)
 problem.SolversCreateFinish()
 
 # Create solver equations and add equations set to solver equations
@@ -639,7 +622,7 @@ solverEquations = iron.SolverEquations()
 problem.SolverEquationsCreateStart()
 problem.SolverGet([iron.ControlLoopIdentifiers.NODE],1,solver)
 solver.SolverEquationsGet(solverEquations)
-solverEquations.sparsityType = iron.SolverEquationsSparsityTypes.SPARSE
+solverEquations.SparsityTypeSet(iron.SolverEquationsSparsityTypes.SPARSE)
 equationsSetIndex = solverEquations.EquationsSetAdd(equationsSet)
 problem.SolverEquationsCreateFinish()
 
