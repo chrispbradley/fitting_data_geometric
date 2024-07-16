@@ -12,7 +12,7 @@ import math
 import random
 
 # Intialise OpenCMISS
-from opencmiss.iron import iron
+from opencmiss.opencmiss import OpenCMISS_Python as oc
 
 # defining the output file to be written in the ExDataFile
 def writeExdataFile(filename,dataPointLocations,dataErrorVector,dataErrorDistance,offset):
@@ -132,29 +132,29 @@ DATA_OFFSET=1000
  EQUATIONS_SET_USER_NUMBER,
  PROBLEM_USER_NUMBER) = range(1,17)
 
-context = iron.Context()
+context = oc.Context()
 context.Create(CONTEXT_USER_NUMBER)
 
-worldRegion = iron.Region()
+worldRegion = oc.Region()
 context.WorldRegionGet(worldRegion)
 
 # Get the computational nodes information
-computationEnvironment = iron.ComputationEnvironment()
+computationEnvironment = oc.ComputationEnvironment()
 context.ComputationEnvironmentGet(computationEnvironment)
 
-worldWorkGroup = iron.WorkGroup()
+worldWorkGroup = oc.WorkGroup()
 computationEnvironment.WorldWorkGroupGet(worldWorkGroup)
 numberOfComputationalNodes = worldWorkGroup.NumberOfGroupNodesGet()
 computationalNodeNumber = worldWorkGroup.GroupNodeNumberGet()
 
 # Create a RC coordinate system
-coordinateSystem = iron.CoordinateSystem()
+coordinateSystem = oc.CoordinateSystem()
 coordinateSystem.CreateStart(COORDINATE_SYSTEM_USER_NUMBER,context)
 coordinateSystem.DimensionSet(3)
 coordinateSystem.CreateFinish()
 
 # Create a region
-region = iron.Region()
+region = oc.Region()
 region.CreateStart(REGION_USER_NUMBER,worldRegion)
 region.LabelSet("FittingRegion")
 region.CoordinateSystemSet(coordinateSystem)
@@ -165,38 +165,38 @@ region.CreateFinish()
 #=================================================================
 
 # Create a tricubic Hermite basis
-basis = iron.Basis()
+basis = oc.Basis()
 basis.CreateStart(BASIS_USER_NUMBER,context)
-basis.TypeSet(iron.BasisTypes.LAGRANGE_HERMITE_TP)
+basis.TypeSet(oc.BasisTypes.LAGRANGE_HERMITE_TP)
 basis.NumberOfXiSet(3)
-basis.InterpolationXiSet([iron.BasisInterpolationSpecifications.CUBIC_HERMITE]*3)
+basis.InterpolationXiSet([oc.BasisInterpolationSpecifications.CUBIC_HERMITE]*3)
 basis.QuadratureNumberOfGaussXiSet([NUMBER_OF_GAUSS_XI]*3)
 basis.CreateFinish()
 
 # Define nodes for the mesh
-nodes = iron.Nodes()
+nodes = oc.Nodes()
 nodes.CreateStart(region,8)
 nodes.CreateFinish()
 
 # Create the mesh
-mesh = iron.Mesh()
+mesh = oc.Mesh()
 mesh.CreateStart(MESH_USER_NUMBER,region,3)
 mesh.NumberOfComponentsSet(1)
 mesh.NumberOfElementsSet(1)
-elements = iron.MeshElements()
+elements = oc.MeshElements()
 elements.CreateStart(mesh, 1, basis)
 elements.NodesSet(1,[1,2,3,4,5,6,7,8])
 elements.CreateFinish()
 mesh.CreateFinish()
 
 # Create a decomposition for the mesh
-decomposition = iron.Decomposition()
+decomposition = oc.Decomposition()
 decomposition.CreateStart(DECOMPOSITION_USER_NUMBER,mesh)
 decomposition.CalculateFacesSet(True)
 decomposition.CreateFinish()
 
 # Decompose 
-decomposer = iron.Decomposer()
+decomposer = oc.Decomposer()
 decomposer.CreateStart(DECOMPOSER_USER_NUMBER,worldRegion,worldWorkGroup)
 decompositionIndex = decomposer.DecompositionAdd(decomposition)
 decomposer.CreateFinish()
@@ -206,226 +206,226 @@ decomposer.CreateFinish()
 #=================================================================
 
 # Create a field for the geometry
-geometricField = iron.Field()
+geometricField = oc.Field()
 geometricField.CreateStart(GEOMETRIC_FIELD_USER_NUMBER,region)
 geometricField.DecompositionSet(decomposition)
-geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,1,1)
-geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,2,1)
-geometricField.ComponentMeshComponentSet(iron.FieldVariableTypes.U,3,1)
-geometricField.ScalingTypeSet(iron.FieldScalingTypes.ARITHMETIC_MEAN)
+geometricField.ComponentMeshComponentSet(oc.FieldVariableTypes.U,1,1)
+geometricField.ComponentMeshComponentSet(oc.FieldVariableTypes.U,2,1)
+geometricField.ComponentMeshComponentSet(oc.FieldVariableTypes.U,3,1)
+geometricField.ScalingTypeSet(oc.FieldScalingTypes.ARITHMETIC_MEAN)
 geometricField.CreateFinish()
 
 # Set the geometric field dofs
 # Node 1
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 1, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 2, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 3, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 1, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 2, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 1, 3, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 1, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 1, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 1, 3, 1.0)
 # Node 2
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 1,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 2, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 3, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 1,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 2, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 2, 3, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 2, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 2, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 2, 3, 1.0)
 # Node 3
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 1, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 2,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 3, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 1, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 2,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 3, 3, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 3, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 3, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 3, 3, 1.0)
 # Node 4
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 1,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 2,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 3, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 1,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 2,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 4, 3, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 4, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 4, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 4, 3, 1.0)
 # Node 5
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 1, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 2, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 3,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 1, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 2, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 5, 3,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 5, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 5, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 5, 3, 1.0)
 # Node 6
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 1,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 2, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 3,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 1,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 2, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 6, 3,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 6, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 6, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 6, 3, 1.0)
 # Node 7
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 1, -CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 2,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 3,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 1, -CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 2,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 7, 3,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 7, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 7, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 7, 3, 1.0)
 # Node 8
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 1,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 2,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 3,  CUBE_SIZE)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 1, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 2, 1.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 3, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 1, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 2, 0.0)
-geometricField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                      1, iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 3, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 1,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 2,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.NO_GLOBAL_DERIV, 8, 3,  CUBE_SIZE)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 1, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1, 8, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 2, 1.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2, 8, 3, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 1, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 2, 0.0)
+geometricField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                      1, oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3, 8, 3, 1.0)
 
-geometricField.ParameterSetUpdateStart(iron.FieldVariableTypes.U, iron.FieldParameterSetTypes.VALUES)
-geometricField.ParameterSetUpdateFinish(iron.FieldVariableTypes.U, iron.FieldParameterSetTypes.VALUES)
+geometricField.ParameterSetUpdateStart(oc.FieldVariableTypes.U, oc.FieldParameterSetTypes.VALUES)
+geometricField.ParameterSetUpdateFinish(oc.FieldVariableTypes.U, oc.FieldParameterSetTypes.VALUES)
 
 #=================================================================
 # Data Points
 #=================================================================
 
 # Create the data points
-dataPoints = iron.DataPoints()
+dataPoints = oc.DataPoints()
 dataPoints.CreateStart(DATA_POINT_USER_NUMBER,region,numberOfDataPoints)
 
 localNumberOfDataPoints = 0
@@ -460,17 +460,17 @@ dataPoints.CreateFinish()
 
 print("Projecting data points onto geometric field")
 # Set up data projection
-dataProjection = iron.DataProjection()
-dataProjection.CreateStart(DATA_PROJECTION_USER_NUMBER,dataPoints,geometricField,iron.FieldVariableTypes.U)
-dataProjection.ProjectionTypeSet(iron.DataProjectionProjectionTypes.BOUNDARY_FACES)
-dataProjection.ProjectionCandidateFacesSet([1],[iron.ElementNormalXiDirections.PLUS_XI3])
+dataProjection = oc.DataProjection()
+dataProjection.CreateStart(DATA_PROJECTION_USER_NUMBER,dataPoints,geometricField,oc.FieldVariableTypes.U)
+dataProjection.ProjectionTypeSet(oc.DataProjectionProjectionTypes.BOUNDARY_FACES)
+dataProjection.ProjectionCandidateFacesSet([1],[oc.ElementNormalXiDirections.PLUS_XI3])
 dataProjection.CreateFinish()
 
 #dataProjection.ResultElementNumberSet(1,1)
 #dataProjection.ResultXiSet(1,[0.1,0.1])
 
 # Evaluate data projection based on geometric field
-dataProjection.DataPointsProjectionEvaluate(iron.FieldParameterSetTypes.VALUES)
+dataProjection.DataPointsProjectionEvaluate(oc.FieldParameterSetTypes.VALUES)
 # Create mesh topology for data projection
 mesh.TopologyDataPointsCalculateProjection(dataProjection)
 # Create decomposition data projection
@@ -501,12 +501,12 @@ print("Projection complete")
 #=================================================================
 
 # Create vector fitting equations set
-equationsSetField = iron.Field()
-equationsSet = iron.EquationsSet()
-equationsSetSpecification = [iron.EquationsSetClasses.FITTING,
-                             iron.EquationsSetTypes.DATA_FITTING_EQUATION,
-                             iron.EquationsSetSubtypes.GENERALISED_DATA_FITTING,
-                             iron.EquationsSetFittingSmoothingTypes.SOBOLEV_VALUE]
+equationsSetField = oc.Field()
+equationsSet = oc.EquationsSet()
+equationsSetSpecification = [oc.EquationsSetClasses.FITTING,
+                             oc.EquationsSetTypes.DATA_FITTING_EQUATION,
+                             oc.EquationsSetSubtypes.GENERALISED_DATA_FITTING,
+                             oc.EquationsSetFittingSmoothingTypes.SOBOLEV_VALUE]
 equationsSet.CreateStart(EQUATIONS_SET_USER_NUMBER,region,geometricField,
         equationsSetSpecification,EQUATIONS_SET_FIELD_USER_NUMBER,equationsSetField)
 equationsSet.CreateFinish()
@@ -516,30 +516,30 @@ equationsSet.CreateFinish()
 #=================================================================
 
 # Create dependent field (will be deformed fitted values based on data point locations)
-dependentField = iron.Field()
+dependentField = oc.Field()
 equationsSet.DependentCreateStart(DEPENDENT_FIELD_USER_NUMBER,dependentField)
-dependentField.VariableLabelSet(iron.FieldVariableTypes.U,"Dependent")
-dependentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
-dependentField.ScalingTypeSet(iron.FieldScalingTypes.ARITHMETIC_MEAN)
+dependentField.VariableLabelSet(oc.FieldVariableTypes.U,"Dependent")
+dependentField.NumberOfComponentsSet(oc.FieldVariableTypes.U,3)
+dependentField.ScalingTypeSet(oc.FieldScalingTypes.ARITHMETIC_MEAN)
 equationsSet.DependentCreateFinish()
 
 # Initialise dependent field to undeformed geometric field
 for component in range (1,4):
-    geometricField.ParametersToFieldParametersComponentCopy(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                                            component, dependentField, iron.FieldVariableTypes.U,
-                                                            iron.FieldParameterSetTypes.VALUES, component)
+    geometricField.ParametersToFieldParametersComponentCopy(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                                            component, dependentField, oc.FieldVariableTypes.U,
+                                                            oc.FieldParameterSetTypes.VALUES, component)
 
 #=================================================================
 # Independent Field
 #=================================================================
 
 # Create data point field (independent field, with vector values stored at the data points)
-independentField = iron.Field()
+independentField = oc.Field()
 equationsSet.IndependentCreateStart(INDEPENDENT_FIELD_USER_NUMBER,independentField)
-independentField.VariableLabelSet(iron.FieldVariableTypes.U,"DataPointVector")
-independentField.VariableLabelSet(iron.FieldVariableTypes.V,"DataPointWeight")
-independentField.NumberOfComponentsSet(iron.FieldVariableTypes.U,3)
-independentField.NumberOfComponentsSet(iron.FieldVariableTypes.V,3)
+independentField.VariableLabelSet(oc.FieldVariableTypes.U,"DataPointVector")
+independentField.VariableLabelSet(oc.FieldVariableTypes.V,"DataPointWeight")
+independentField.NumberOfComponentsSet(oc.FieldVariableTypes.U,3)
+independentField.NumberOfComponentsSet(oc.FieldVariableTypes.V,3)
 independentField.DataProjectionSet(dataProjection)
 equationsSet.IndependentCreateFinish()
 
@@ -555,11 +555,11 @@ if (elementDomain == computationalNodeNumber):
         y = dataList[1]
         z = dataList[2]
         # set data point field values
-        independentField.ParameterSetUpdateElementDataPointDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES, 
+        independentField.ParameterSetUpdateElementDataPointDP(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES, 
                                                               1,dataPointId,1,x)
-        independentField.ParameterSetUpdateElementDataPointDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES, 
+        independentField.ParameterSetUpdateElementDataPointDP(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES, 
                                                               1,dataPointId,2,y)
-        independentField.ParameterSetUpdateElementDataPointDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
+        independentField.ParameterSetUpdateElementDataPointDP(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
                                                               1,dataPointId,3,z)
 
 #=================================================================
@@ -567,25 +567,25 @@ if (elementDomain == computationalNodeNumber):
 #=================================================================
 
 # Create material field (Sobolev parameters)
-materialField = iron.Field()
+materialField = oc.Field()
 equationsSet.MaterialsCreateStart(MATERIALS_FIELD_USER_NUMBER,materialField)
-materialField.VariableLabelSet(iron.FieldVariableTypes.U,"SmoothingParameters")
+materialField.VariableLabelSet(oc.FieldVariableTypes.U,"SmoothingParameters")
 equationsSet.MaterialsCreateFinish()
 
 # Set kappa and tau - Sobolev smoothing parameters
-materialField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,1,tau)
-materialField.ComponentValuesInitialiseDP(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,2,kappa)
+materialField.ComponentValuesInitialiseDP(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,1,tau)
+materialField.ComponentValuesInitialiseDP(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,2,kappa)
 
 #=================================================================
 # Equations
 #=================================================================
 
 # Create equations
-equations = iron.Equations()
+equations = oc.Equations()
 equationsSet.EquationsCreateStart(equations)
-equations.sparsityType = iron.EquationsSparsityTypes.SPARSE
-equations.outputType = iron.EquationsOutputTypes.NONE
-equations.outputType = iron.EquationsOutputTypes.MATRIX
+equations.sparsityType = oc.EquationsSparsityTypes.SPARSE
+equations.outputType = oc.EquationsOutputTypes.NONE
+equations.outputType = oc.EquationsOutputTypes.MATRIX
 equationsSet.EquationsCreateFinish()
 
 #=================================================================
@@ -593,10 +593,10 @@ equationsSet.EquationsCreateFinish()
 #=================================================================
 
 # Create fitting problem
-problem = iron.Problem()
-problemSpecification = [iron.ProblemClasses.FITTING,
-                        iron.ProblemTypes.FITTING,
-                        iron.ProblemSubtypes.STATIC_FITTING]
+problem = oc.Problem()
+problemSpecification = [oc.ProblemClasses.FITTING,
+                        oc.ProblemTypes.FITTING,
+                        oc.ProblemSubtypes.STATIC_LINEAR_FITTING]
 problem.CreateStart(PROBLEM_USER_NUMBER,context,problemSpecification)
 problem.CreateFinish()
 
@@ -605,24 +605,24 @@ problem.ControlLoopCreateStart()
 problem.ControlLoopCreateFinish()
 
 # Create problem solver
-solver = iron.Solver()
+solver = oc.Solver()
 problem.SolversCreateStart()
-problem.SolverGet([iron.ControlLoopIdentifiers.NODE],1,solver)
-#solver.OutputTypeSet(iron.SolverOutputTypes.NONE)
-solver.OutputTypeSet(iron.SolverOutputTypes.MATRIX)
-solver.LinearTypeSet(iron.LinearSolverTypes.ITERATIVE)
-#solver.LibraryTypeSet(iron.SolverLibraries.UMFPACK) # UMFPACK/SUPERLU
+problem.SolverGet([oc.ControlLoopIdentifiers.NODE],1,solver)
+#solver.OutputTypeSet(oc.SolverOutputTypes.NONE)
+solver.OutputTypeSet(oc.SolverOutputTypes.MATRIX)
+solver.LinearTypeSet(oc.LinearSolverTypes.ITERATIVE)
+#solver.LibraryTypeSet(oc.SolverLibraries.UMFPACK) # UMFPACK/SUPERLU
 solver.LinearIterativeAbsoluteToleranceSet(1.0E-10)
 solver.LinearIterativeRelativeToleranceSet(1.0E-05)
 problem.SolversCreateFinish()
 
 # Create solver equations and add equations set to solver equations
-solver = iron.Solver()
-solverEquations = iron.SolverEquations()
+solver = oc.Solver()
+solverEquations = oc.SolverEquations()
 problem.SolverEquationsCreateStart()
-problem.SolverGet([iron.ControlLoopIdentifiers.NODE],1,solver)
+problem.SolverGet([oc.ControlLoopIdentifiers.NODE],1,solver)
 solver.SolverEquationsGet(solverEquations)
-solverEquations.SparsityTypeSet(iron.SolverEquationsSparsityTypes.SPARSE)
+solverEquations.SparsityTypeSet(oc.SolverEquationsSparsityTypes.SPARSE)
 equationsSetIndex = solverEquations.EquationsSetAdd(equationsSet)
 problem.SolverEquationsCreateFinish()
 
@@ -631,21 +631,21 @@ problem.SolverEquationsCreateFinish()
 #=================================================================
 
 # Create boundary conditions and set first and last nodes to 0.0 and 1.0
-boundaryConditions = iron.BoundaryConditions()
+boundaryConditions = oc.BoundaryConditions()
 solverEquations.BoundaryConditionsCreateStart(boundaryConditions)
 
 for nodeIdx in range(1,5):
     for componentIdx in range(1,4):
         for derivativeIdx in range(1,9):
-            boundaryConditions.AddNode(dependentField,iron.FieldVariableTypes.U,
+            boundaryConditions.AddNode(dependentField,oc.FieldVariableTypes.U,
                                        1,derivativeIdx,nodeIdx,componentIdx,
-                                       iron.BoundaryConditionsTypes.FIXED,0.0)
+                                       oc.BoundaryConditionsTypes.FIXED,0.0)
        
 solverEquations.BoundaryConditionsCreateFinish()
 
 # Export undeformed mesh geometry
 print("Writing undeformed geometry")
-fields = iron.Fields()
+fields = oc.Fields()
 fields.CreateRegion(region)
 fields.NodesExport("UndeformedGeometry","FORTRAN")
 fields.ElementsExport("UndeformedGeometry","FORTRAN")
@@ -662,34 +662,34 @@ for iteration in range (1,numberOfIterations+1):
     problem.Solve()
     # Normalise derivatives
     for nodeIdx in range(1,9):
-      for derivativeIdx in [iron.GlobalDerivativeConstants.GLOBAL_DERIV_S1,
-                            iron.GlobalDerivativeConstants.GLOBAL_DERIV_S2,
-                            iron.GlobalDerivativeConstants.GLOBAL_DERIV_S3]:
+      for derivativeIdx in [oc.GlobalDerivativeConstants.GLOBAL_DERIV_S1,
+                            oc.GlobalDerivativeConstants.GLOBAL_DERIV_S2,
+                            oc.GlobalDerivativeConstants.GLOBAL_DERIV_S3]:
           length=0.0
           for componentIdx in range(1,4):
-              derivativeVector[componentIdx]=dependentField.ParameterSetGetNode(iron.FieldVariableTypes.U,
-                                                                                iron.FieldParameterSetTypes.VALUES,
+              derivativeVector[componentIdx]=dependentField.ParameterSetGetNode(oc.FieldVariableTypes.U,
+                                                                                oc.FieldParameterSetTypes.VALUES,
                                                                                 1,derivativeIdx,nodeIdx,componentIdx)
               length=length + derivativeVector[componentIdx]*derivativeVector[componentIdx]
           length=math.sqrt(length)
           for componentIdx in range(1,4):
               value=derivativeVector[componentIdx]/length
-              dependentField.ParameterSetUpdateNode(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
+              dependentField.ParameterSetUpdateNode(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
                                                     1,derivativeIdx,nodeIdx,componentIdx,value)
 
     # Copy dependent field to geometric 
     for componentIdx in range(1,4):
-        dependentField.ParametersToFieldParametersComponentCopy(iron.FieldVariableTypes.U,iron.FieldParameterSetTypes.VALUES,
-                                                                componentIdx,geometricField,iron.FieldVariableTypes.U,
-                                                                iron.FieldParameterSetTypes.VALUES,componentIdx)
+        dependentField.ParametersToFieldParametersComponentCopy(oc.FieldVariableTypes.U,oc.FieldParameterSetTypes.VALUES,
+                                                                componentIdx,geometricField,oc.FieldVariableTypes.U,
+                                                                oc.FieldParameterSetTypes.VALUES,componentIdx)
     # Reproject
-    dataProjection.DataPointsProjectionEvaluate(iron.FieldParameterSetTypes.VALUES)
+    dataProjection.DataPointsProjectionEvaluate(oc.FieldParameterSetTypes.VALUES)
     #dataProjection.ResultAnalysisOutput("")
     rmsError=dataProjection.ResultRMSErrorGet()
     print("RMS error = "+ str(rmsError))
     # Export fields
     print("Writing deformed geometry")
-    fields = iron.Fields()
+    fields = oc.Fields()
     fields.CreateRegion(region)
     fields.NodesExport("DeformedGeometry" + str(iteration),"FORTRAN")
     fields.ElementsExport("DeformedGeometry" + str(iteration),"FORTRAN")
@@ -698,4 +698,4 @@ for iteration in range (1,numberOfIterations+1):
 # Destroy the context
 context.Destroy()
 # Finalise OpenCMISS
-iron.Finalise()
+oc.Finalise()
